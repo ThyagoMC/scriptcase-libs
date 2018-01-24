@@ -12,6 +12,7 @@ Com isso todo aplicação vai ter disponibilizada para ela as funções dessa bi
 As funções presente na lib são:
 * Identificação do bloco as ser replicado por um campo
 * Método para atualizar dados em evento ajax
+* Disparo de erros por campo do bloco
 * Header geral dos blocos
 * Replicação do header do bloco caso o mesmo esteja presente
 * Controle automático de botões adição e exclusão
@@ -19,5 +20,6 @@ As funções presente na lib são:
 * Integração com refresh do scriptcase
 * Disparo de eventos ajax originais presentes no campos do bloco
 * Máscaras nos campos utilizando a biblioteca InputMask
+
 
 ps.: Ainda vou adicionar comentários ao código para explicar o porquê de cada parte do mesmo.
