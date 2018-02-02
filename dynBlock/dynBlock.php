@@ -1,4 +1,17 @@
 <?php
+/**
+* function reloadDynBlock($fieldRef, $data=false)   
+:::  em um evento ajax ao chamar essa função atualiza os blocos dinâmicos, não passando os dados ela atualiza com o valor guardado em sessão
+
+function arrDynBlock($content)
+::: utilizar essa função para transformar os valores do formato json para array -> retorna o array
+
+function   jsonDynBlock($data)
+::: utilizar essa função para retornar o json apartir do array de dados;
+
+function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000)
+::: função de inicialização da biblioteca
+**/
 function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 	$appName = $this->Ini->nm_cod_apl;
 	if($this->NM_ajax_flag || $this->nmgp_opcao == 'formphp') return;
@@ -6,6 +19,8 @@ function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 ?>
 <style>
 	inputmask{display:none}
+	.no_links .rem_link{ display: none; }
+	.no_links .add_link{ display: none; }
 	.no_rem_link .rem_link {  display: none; }
 	.no_add_link .add_link { display: none; }
 	.flr{ float:right }
@@ -15,7 +30,12 @@ function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 </style>
 <script>
 	$(document).ready(function(){
-		window.dynBlock = {};
+		window.dynBlock = window.dynBlock || ( function funDynBlock(){ 
+			for(var i in funDynBlock){
+				var block = funDynBlock[i+""];
+				if(block && typeof block == "object" && block.get)block.get();
+			}
+		});
 		dynBlock['<?=$fieldRef?>'] = (function(){
 			var fieldRef = '<?=$fieldRef?>';
 			var txtHeader = '<?=$blockHeader?>';
@@ -24,7 +44,7 @@ function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 			var divTarget = $('[name='+fieldRef+']').parents('div[id*=div_hidden]');
 			var size = divTarget.find('.scFormBlock').attr('colspan');
 			if(!size)size = divTarget.find('tr:first').children().length;
-			var trbtn ="<tr><td colspan='"+size+"'><div class='flr'><a> </a><a href='javascript:;' class='btn_link add_link'>Adicionar</a>";
+			var trbtn ="<tr><td colspan='"+size+"'><div class='flr'><a> </a><a href='javascript:;' class='btn_link add_link'>Adicionar</a>";
 			trbtn += "<a href='javascript:;' class='btn_link rem_link'>Remover</a></td></tr>";
 	
 			divTarget.prepend('<div class="scFormBlock hdivtgt">'+txtHeader+'</div>');
@@ -41,7 +61,7 @@ function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 				var n = $(this).attr('name');
 				var fieldOrig = $(blockInit).find('[name='+n+']');
 				var d = fieldOrig.data();
-				if(typeof d == "object" && d.events){ 
+				if(d && typeof d == "object" && d.events){ 
 					for(var nEvt in d.events){ 
 						var arrEv = d.events[nEvt+''];
 						for(var i in arrEv){ 
@@ -153,6 +173,7 @@ function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 							}else{
 								field.val(group[p+'']);
 							}
+							field.siblings('[id*=id_read_off_]').find('span').text(group[p+'']);
 							if(p.search("_error") > -1){
 								var ep = p.replace("_error", "");
 								field = toAdd.find('[name*='+ep+'_#]');
@@ -196,29 +217,49 @@ function initDynBlock($fieldRef, $fieldGroup, $blockHeader, $errorTime = 5000){
 					}
 					finalObj.push(midObj);
 				}
-				$('[name='+fieldGroup+']').val(JSON.stringify(finalObj));
-			}
-	
-			var next_nm_atualiza = nm_atualiza;
-			nm_atualiza = function (x, y){
-				getAll();
-				next_nm_atualiza(x, y);
-			}
-	
-			var next_nm_recarga_form = nm_recarga_form;
-			nm_recarga_form = function (x, y){
-				getAll();
-				next_nm_recarga_form(x,y);
+				var val = JSON.stringify(finalObj);
+				$('[name='+fieldGroup+']').val(val );
+				return val;
 			}
 			
-			return loadAll;
+			function remLinks(){
+				divTarget.addClass('no_links');
+			}
+			function addLinks(){
+				divTarget.removeClass('no_links');
+			}
+			function setQty(num){
+				var groups = divTarget.find('.gfields');
+				var qty = groups.length ;
+				if (qty > num){
+					var groupsToRem = groups.splice(num);
+					for(var i in groupsToRem ) groupsToRem[i+''].remove();
+				}else if  (qty < num){
+					var dif = num - qty;
+					for(var i =0; i < dif; i++) addGroup();
+				}
+				controlLinks();
+			}
+			
+			return { load: loadAll, get:getAll, controlLinks:controlLinks, remLinks:remLinks, addLinks:addLinks, setQty:setQty };
 		})();
+		if(!dynBlock.__isSetted){
+			dynBlock.__isSetted = true;
+			var originalSubmit = document.F1.submit;
+			document.F1.submit = function(e){
+				dynBlock();
+				originalSubmit.apply(document.F1, arguments);
+			}
+		}
 	});
 </script>
 <?php
 }
 
 function arrDynBlock($content){
+	if(!mb_detect_encoding($content, 'UTF-8', true)){
+		$content= utf8_encode($content);
+	}
 	$arr  = json_decode($content ,true) ;
 	if($arr == null){
 		$content = str_replace('\\"','"',$content );
@@ -249,7 +290,7 @@ function reloadDynBlock($fieldRef, $data=false){
 		$this->$fiedlGroup = $jsonData ;	
 	}
 	if($this->NM_ajax_flag){
-		sc_ajax_javascript("window.dynBlock.".$fieldRef);
+		sc_ajax_javascript("window.dynBlock.".$fieldRef.".load");
 	}	
 }
 ?>
