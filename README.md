@@ -1,5 +1,5 @@
 # scriptcase-libs
-Bibliotecas desenvolvidas por mim para suprir algumas limitações de um versão antiga do SC
+Bibliotecas desenvolvidas por mim para suprir algumas limitações de uma versão antiga do SC
 
 Em cada pasta aqui desse projeto, terá uma biblioteca utilizada para suprir uma necessidade do scriptcase.
 
